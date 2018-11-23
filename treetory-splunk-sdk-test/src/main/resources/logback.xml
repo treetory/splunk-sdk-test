@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false" scan="true" scanPeriod="60 seconds">
+
+	<contextName>splunk-sdk-test</contextName>
+	
+	<shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+	
+	<appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>logs/splunk-sdk-test-%d{yyyyMMdd}.log.zip</fileNamePattern>
+			<maxHistory>180</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%-20.20thread] %-45.45(%logger{30}.%M\(%L\)) - %msg%n</pattern>
+		</encoder>
+	</appender>
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%-20.20thread] %-45.45(%logger{30}.%M\(%L\)) - %msg%n</pattern>
+		</layout>
+	</appender>
+
+	<logger name="org.springframework">
+		<level value="ERROR" />
+	</logger>
+	<logger name="org.springframework.boot">
+		<level value="WARN" />
+	</logger>
+<!-- 	
+	<logger name="org.springframework.core">
+		<level value="ERROR" />
+	</logger>
+	<logger name="org.springframework.beans">
+		<level value="ERROR" />
+	</logger>
+	<logger name="org.springframework.context">
+		<level value="ERROR" />
+	</logger>
+	-->
+	<logger name="org.springframework.web">
+		<level value="ERROR" />
+	</logger>
+	<logger name="java.sql">
+		<level value="ERROR" />
+	</logger>
+	<logger name="org.mybatis.spring">
+		<level value="ERROR" />
+	</logger>
+	<logger name="org.hibernate">
+		<level value="ERROR" />
+	</logger>	
+	<logger name="com.ulisesbocchio">
+		<level value="ERROR" />
+	</logger>	
+	<logger name="org.apache.catalina">
+		<level value="ERROR" />
+	</logger>	
+	<logger name="org.apache.ibatis">
+		<level value="ERROR" />
+	</logger>	
+	<root level="DEBUG">
+		<appender-ref ref="ROLLING" />
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>
