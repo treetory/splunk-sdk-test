@@ -1,6 +1,9 @@
 package com.treetory.test.mvc.service;
 
+import com.splunk.Event;
 import com.treetory.test.mvc.model.SplunkRequest;
+
+import java.util.List;
 
 public interface SplunkService {
 
@@ -13,4 +16,8 @@ public interface SplunkService {
 	public Object getLogByRealtimeSearch(SplunkRequest model);
 	
 	public Object getLogByExportSearch(SplunkRequest model);
+
+	public void writeLogs(String json);
+
+	public List<Event> getMovies(String query);
 }

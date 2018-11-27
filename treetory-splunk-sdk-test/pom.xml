@@ -64,7 +64,12 @@
 			<artifactId>splunk-sdk-java</artifactId>
 			<version>1.6.4</version>
 			<scope>system</scope>
-			<systemPath>${basedir}/src/main/webapp/WEB-INF/lib/splunk-sdk-java-1.6.4.jar</systemPath>
+			<systemPath>${basedir}/lib/splunk-sdk-java-1.6.4.jar</systemPath>
+		</dependency>
+		<!-- HTTP Client -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
 		</dependency>
 	</dependencies>
 
