@@ -12,7 +12,17 @@ public class SplunkClient {
     private static final Logger LOG = LoggerFactory.getLogger(SplunkClient.class);
     
     public Service splunkService;
-    
+
+    public static SplunkClient withConnectionInfo(String hostIp, String username, String password, int port, String scheme) {
+        SplunkClient client = new SplunkClient();
+        client.connect(hostIp, username, password, port, scheme);
+        return client;
+    }
+
+    public static void disconnectService(Service splunkService) {
+        splunkService.logout();
+    }
+
     public void connect(String hostIp, String username, String password, int port, String scheme) {
         ServiceArgs connArgs = new ServiceArgs();
         connArgs.setHost(hostIp);
@@ -26,9 +36,9 @@ public class SplunkClient {
         
         StringBuffer sb = new StringBuffer();
         sb.append(System.lineSeparator());
+        sb.append(String.format("TOKEN = %s", this.splunkService.getToken()));
         sb.append(System.lineSeparator());
-        sb.append(String.format("APP = %s", this.splunkService.getApp()));
-        
+
         LOG.debug("{}", sb.toString());
     }
     

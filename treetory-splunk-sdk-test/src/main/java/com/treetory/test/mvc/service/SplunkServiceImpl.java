@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.splunk.*;
+import com.treetory.test.mvc.model.SplunkJobCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,218 +26,171 @@ public class SplunkServiceImpl implements SplunkService {
 	@Autowired
 	private SplunkProperties sProperties;
 
-	@Override
-	public Object getLogByNormalSearch(SplunkRequest model) {
-		
-		SplunkClient sc = null;
-		InputStream is = null;
-		ResultsReader resultsReaderNormalSearch = null;
-		
-		try {
-		
-			sc = new SplunkClient();
-			sc.connect(sProperties.getHostIp(), sProperties.getUsername(), sProperties.getPassword(), sProperties.getPort(), sProperties.getScheme());
-			
-			JobCollection jobs = sc.splunkService.getJobs();
-			
-			Job job = jobs.create(model.getQuery());
-			
-			// Wait until results are available.
-	        boolean didPrintAStatusLine = false;
-			while(!job.isDone()) {
-				if (job.isReady()) {
-	                float progress = job.getDoneProgress() * 100.0f;
-	                int scanned = job.getScanCount();
-	                int matched = job.getEventCount();
-	                int results = job.getResultCount();
-	                System.out.format(
-	                    "\r%03.1f%% done -- %d scanned -- %d matched -- %d results",
-	                    progress, scanned, matched, results);
-	                didPrintAStatusLine = true;
-	            }
+    /**
+     *  splunk job 의 수행결과 inputStream 으로부터 결과를 파싱한다.
+     *
+     * @param is
+     * @return
+     * @throws IOException
+     */
+    private List<?> readFromInputStream(InputStream is) throws IOException {
 
-	            Thread.sleep(1000);
-			}
-			
-			Args outputArgs = new Args();
-	        outputArgs.put("count", job.getResultCount());
-	        outputArgs.put("offset", 0);
-	        outputArgs.put("output_mode", "json");
-			
-			is = job.getResults(outputArgs);
-			
-			if (didPrintAStatusLine)
-	            System.out.println("");
-			
-			resultsReaderNormalSearch = new ResultsReaderJson(is);
-			List<Map<String, String>> eventList = new ArrayList<Map<String, String>>();
-		    HashMap<String, String> event;
-		    while ((event = resultsReaderNormalSearch.getNextEvent()) != null) {
-		    	
-		    	System.out.println("EVENT:********");
-                for (String key : event.keySet())
-                    System.out.println("  " + key + " --> " + event.get(key));
-                
-		    	eventList.add(event);
-		    }
-			
-		    is = job.getEvents();
-			
-		    LOG.debug("EVENT COUNT = {} / SCAN COUNT = {} / eventList size = {}", job.getEventCount(), job.getScanCount(), eventList.size());
-			
-		    job.cancel();
-		    
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			if (sc != null) {
-				sc.disconnect();
-			}
-			if (is != null) {
-				try {
-					is.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			if (resultsReaderNormalSearch != null) {
-				try {
-					resultsReaderNormalSearch.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		return null;
-	}
-
-	@Override
-	public Object getLogByBlockingSearch(SplunkRequest model) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object getLogByOneshotSearch(SplunkRequest model) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object getLogByRealtimeSearch(SplunkRequest model) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object getLogByExportSearch(SplunkRequest model) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void writeLogs(String json) {
-
-		SplunkClient sc = null;
-
-		try {
-
-			sc = new SplunkClient();
-            sc.connect(sProperties.getHostIp(), sProperties.getUsername(), sProperties.getPassword(), sProperties.getPort(), sProperties.getScheme());
-
-            sc.splunkService.getReceiver().log("movie", json);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-		    sc.disconnect();
-        }
-
-	}
-
-    @Override
-    public List<Event> getMovies(String query) {
-
-		List<Event> eventList = new ArrayList<Event>();
-
-		SplunkClient sc = null;
-        InputStream is = null;
+        List<Map<String, String>> result = new ArrayList<>();
         ResultsReader resultsReaderNormalSearch = null;
 
         try {
 
-            sc = new SplunkClient();
-            sc.connect(sProperties.getHostIp(), sProperties.getUsername(), sProperties.getPassword(), sProperties.getPort(), sProperties.getScheme());
-
-            JobCollection jobs = sc.splunkService.getJobs();
-
-            Job job = jobs.create(query);
-
-            // Wait until results are available.
-            boolean didPrintAStatusLine = false;
-            while(!job.isDone()) {
-                if (job.isReady()) {
-                    float progress = job.getDoneProgress() * 100.0f;
-                    int scanned = job.getScanCount();
-                    int matched = job.getEventCount();
-                    int results = job.getResultCount();
-                    System.out.format(
-                            "\r%03.1f%% done -- %d scanned -- %d matched -- %d results",
-                            progress, scanned, matched, results);
-                    didPrintAStatusLine = true;
-                }
-
-                Thread.sleep(1000);
-            }
-
-            Args outputArgs = new Args();
-            outputArgs.put("count", job.getResultCount());
-            outputArgs.put("offset", 0);
-            outputArgs.put("output_mode", "json");
-
-            is = job.getResults(outputArgs);
-
-            if (didPrintAStatusLine)
-                System.out.println("");
-
             resultsReaderNormalSearch = new ResultsReaderJson(is);
             Event event;
             while ((event = resultsReaderNormalSearch.getNextEvent()) != null) {
-                eventList.add(event);
+                result.add(event);
             }
 
-            LOG.debug("{}", eventList);
-
-            is = job.getEvents();
-
-            LOG.debug("EVENT COUNT = {} / SCAN COUNT = {} / eventList size = {}", job.getEventCount(), job.getScanCount(), eventList.size());
-
-            job.cancel();
-
-        } catch (Exception e) {
-            e.printStackTrace();
         } finally {
-            if (sc != null) {
-                sc.disconnect();
-            }
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (resultsReaderNormalSearch != null) {
-                try {
-                    resultsReaderNormalSearch.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            resultsReaderNormalSearch.close();
+            is.close();
         }
 
-        return eventList;
+        return result;
+    }
+
+    /**
+     * splunk job 으로부터 타입 별, 결과를 생성한다.
+     *
+     * @param job
+     * @param commandJob
+     * @return
+     */
+    private List<?> makeResult(Job job, SplunkJobCommand commandJob) {
+
+        List<?> result = null;
+        Args outputArgs = commandJob.getOutputArgs();
+        if (!commandJob.getOutputArgs().containsKey("count")) {
+            outputArgs.put("count", job.getResultCount());
+        }
+
+        try {
+
+            switch (commandJob.getType()) {
+
+                case results:
+
+                    result = this.readFromInputStream(job.getResults(commandJob.getOutputArgs()));
+
+                    break;
+                case events:
+
+                    result = this.readFromInputStream(job.getEvents(commandJob.getOutputArgs()));
+
+                    break;
+                case preview:
+
+                    result = this.readFromInputStream(job.getResultsPreview(commandJob.getOutputArgs()));
+
+                    break;
+                case searchlog:
+
+                    result = this.readFromInputStream(job.getSearchLog(commandJob.getOutputArgs()));
+
+                    break;
+                case summary:
+
+                    result = this.readFromInputStream(job.getSummary(commandJob.getOutputArgs()));
+
+                    break;
+                case timeline:
+
+                    result = this.readFromInputStream(job.getTimeline(commandJob.getOutputArgs()));
+
+                    break;
+            }
+
+        } catch (IOException e) {
+            LOG.error("{}", e);
+        }
+
+        return result;
+
+    }
+
+    /**
+     * splunk job 을 생성한다.
+     *
+     * @param splunkService
+     * @param query
+     * @param jobArgs
+     * @return
+     * @throws InterruptedException
+     */
+    private Job createJob(com.splunk.Service splunkService, String query, JobArgs jobArgs) throws InterruptedException {
+
+        JobCollection jobs = splunkService.getJobs();
+
+        Job job = jobArgs == null ? jobs.create(query) : jobs.create(query, jobArgs);
+
+        // Wait until results are available.
+        boolean didPrintAStatusLine = false;
+
+        while(!job.isReady()) {
+            Thread.sleep(100);
+        }
+
+        LOG.debug("Is Job ready : {}, done : {}, finalized : {}, saved : {}", job.isReady(), job.isDone(), job.isFinalized(), job.isSaved());
+
+        float progress = 0f;
+        int scanned = 0;
+        int matched = 0;
+        int results = 0;
+
+        do {
+
+            if (job.isReady()) {
+
+                progress = job.getDoneProgress() * 100.0f;
+                scanned = job.getScanCount();
+                matched = job.getEventCount();
+                results = job.getResultCount();
+
+                didPrintAStatusLine = true;
+
+                System.out.format(
+                        "\r%03.1f%% is Ready? [%b] is Done? [%b] -- %d scanned -- %d matched -- %d results",
+                        progress, job.isReady(), job.isDone(), scanned, matched, results);
+
+            }
+
+            Thread.sleep(1000);
+
+        } while(!job.isDone());
+
+        if (didPrintAStatusLine)
+            System.out.println("");
+
+        return job;
+    }
+
+    @Override
+    public List<?> getLogByNormalSearch(SplunkJobCommand commandJob) {
+
+        SplunkClient client = SplunkClient.withConnectionInfo(sProperties.getHostIp(), sProperties.getUsername(), sProperties.getPassword(), sProperties.getPort(), sProperties.getScheme());
+
+        List<?> result = null;
+
+        try {
+
+            Job _job = this.createJob(client.splunkService, commandJob.getQuery(), commandJob.getJobArgs());
+
+            LOG.debug(" ==> RESULT COUNT : {}", _job.getResultCount());
+
+            result = this.makeResult(_job, commandJob);
+
+        } catch (InterruptedException e) {
+            LOG.error("{}", e);
+        } finally {
+            client.disconnect();
+        }
+
+        return result;
     }
 
 }

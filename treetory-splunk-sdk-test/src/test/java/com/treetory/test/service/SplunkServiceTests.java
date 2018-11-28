@@ -2,7 +2,11 @@ package com.treetory.test.service;
 
 import com.google.gson.Gson;
 import com.splunk.Event;
+import com.splunk.JobArgs;
+import com.splunk.JobResultsArgs;
 import com.treetory.test.common.util.http.HttpClient;
+import com.treetory.test.mvc.model.SplunkJobCommand;
+import com.treetory.test.mvc.service.SplunkExampleService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -34,15 +38,85 @@ public class SplunkServiceTests {
 	private SplunkService sService;
 
 	@Autowired
+    private SplunkExampleService seService;
+
+	@Autowired
 	private HttpClient httpClient;
 
 	@Autowired
     private Gson gson;
 
-	//@Test
+	@Test
 	public void testDoSearch() throws Exception {
-		sService.getLogByNormalSearch(new SplunkRequest(9));
+
+		String[] queries = {
+                "index=\"moca_result\" category=* | top limit=4 category \n" +
+                        "| eval action=if( category == 0, 3.5, if( category == 1, 2.5, if( category == 2, 1.5, 0.5 ) ) )\n" +
+                        "| sort -action\n" +
+                        "| head 1\n" +
+                        "| table action"
+                 ,
+                "index=\"moca_system\" | spath | rename {}.cpu{}.usage_rate as cpu | top limit=1 cpu | table cpu \n" +
+                        "| appendcols [  search index=\"moca_system\" | spath output=thres path={}.threshold{0}.threshold | top limit=1 thres | table thres ]\n" +
+                        "| rangemap field=cpu default=\"안전\"\n" +
+                        "| head ( cpu < thres)\n" +
+                        "| appendpipe [ stats count | eval \"cpu_danger\"=0 | where count=0 | table \"cpu_danger\" ]\n" +
+                        "| rangemap field=cpu_danger default=\"확인 필요\""
+                ,
+                "index=\"moca_system\" | spath | rename {}.disk{}.usage_rate as disk | top limit=1 disk | table disk \n" +
+                        "| appendcols [  search index=\"moca_system\" | spath output=thres path={}.threshold{2}.threshold | top limit=1 thres | table thres ]\n" +
+                        "| rangemap field=disk default=\"안전\"\n" +
+                        "| head ( disk < thres)\n" +
+                        "| appendpipe [ stats count | eval \"disk_danger\"=0 | where count=0 | table \"disk_danger\" ]\n" +
+                        "| rangemap field=disk_danger default=\"확인 필요\""
+                ,
+                "index=\"moca_system\" | spath | rename {}.memory{}.usage_rate as mem | top limit=1 mem | table mem \n" +
+                        "| appendcols [  search index=\"moca_system\" | spath output=thres path={}.threshold{1}.threshold | top limit=1 thres | table thres ]\n" +
+                        "| rangemap field=mem default=\"안전\"\n" +
+                        "| head ( mem < thres)\n" +
+                        "| appendpipe [ stats count | eval \"mem_danger\"=0 | where count=0 | table \"mem_danger\" ]\n" +
+                        "| rangemap field=mem_danger default=\"확인 필요\""
+                ,
+                "index=\"moca_log\" signature_name=* | top limit=5 signature_name showperc=false | appendpipe [ stats count | eval \"signature_name\"=\"-\" | where count=0 | table \"signature_name\", \"count\" ]"
+                ,
+                "index=\"moca_result\" rule=* | top limit=5 rule showperc=false | appendpipe [ stats count | eval \"rule\"=\"-\" | where count=0 | table \"rule\", \"count\" ]"
+                ,
+                "index=\"moca_log\" s_ip=* | top limit=5 s_ip showperc=false | appendpipe [ stats count | eval \"s_ip\"=\"-\" | where count=0 | table \"s_ip\", \"count\" ]"
+                ,
+                "index=\"moca_log\" d_ip=* | top limit=5 d_ip showperc=false | appendpipe [ stats count | eval \"d_ip\"=\"-\" | where count=0 | table \"d_ip\", \"count\" ]"
+                ,
+                "index=\"moca_result\" rule=* | table \"create_ts\", \"s_ip\", \"d_ip\", \"message\" | appendpipe [ stats count | eval \"create_ts\"=\"-\", s_ip=\"-\", \"d_ip\"=\"-\", \"message\"=\"-\" | where count=0 | table \"create_ts\", \"s_ip\", \"d_ip\", \"message\" ]"
+                }
+                ;
+
+		JobArgs jobArgs = new JobArgs();
+        jobArgs.setExecutionMode(JobArgs.ExecutionMode.NORMAL);
+        jobArgs.setSearchMode(JobArgs.SearchMode.NORMAL);
+
+        JobResultsArgs resultsArgs = new JobResultsArgs();
+        resultsArgs.setOutputMode(JobResultsArgs.OutputMode.JSON);
+
+        for (String query : queries) {
+
+            SplunkJobCommand command = SplunkJobCommand.create(query, jobArgs, resultsArgs, SplunkJobCommand.JOB_RESULT_TYPE.results);
+            List<?> result = sService.getLogByNormalSearch(command);
+
+            LOG.debug("{}", result);
+
+            assertNotNull(result);
+
+        }
+
 	}
+
+	@Test
+	public void testNormalSearch() throws Exception {
+
+	    List<?> result = seService.getLogByNormalSearch(new SplunkRequest(9));
+        LOG.debug("{}", result);
+
+        assertNotNull(result);
+    }
 
 	@Test
 	public void testGetMovieFromOpenAPI() throws Exception {
@@ -51,7 +125,7 @@ public class SplunkServiceTests {
 
 	    Object obj = httpClient.get(url);
 
-        sService.writeLogs(gson.toJson(obj));
+        seService.writeLogs(gson.toJson(obj));
 
     }
 
@@ -59,7 +133,10 @@ public class SplunkServiceTests {
     public void testGetMovieFromSplunk() throws Exception {
 
 	    String query = "search index = \"movie\"";
-	    List<Event> result = sService.getMovies(query);
+	    List<Event> result = seService.getMovies(query);
+
+	    LOG.debug("{}", result);
+
 		assertNotNull(result);
 
     }
