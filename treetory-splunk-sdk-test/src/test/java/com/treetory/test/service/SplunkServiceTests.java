@@ -1,6 +1,7 @@
 package com.treetory.test.service;
 
 import com.google.gson.Gson;
+import com.splunk.Args;
 import com.splunk.Event;
 import com.splunk.JobArgs;
 import com.splunk.JobResultsArgs;
@@ -114,24 +115,29 @@ public class SplunkServiceTests {
 	public void testNormalSearch() throws Exception {
 
 		String query = "index=\"moca_result\" rule=* | table \"create_ts\", \"s_ip\", \"d_ip\", \"message\" | appendpipe [ stats count | eval \"create_ts\"=\"-\", s_ip=\"-\", \"d_ip\"=\"-\", \"message\"=\"-\" | where count=0 | table \"create_ts\", \"s_ip\", \"d_ip\", \"message\" ]";
-
+        /*
         JobArgs jobArgs = new JobArgs();
         jobArgs.setExecutionMode(JobArgs.ExecutionMode.ONESHOT);
         jobArgs.setSearchMode(JobArgs.SearchMode.NORMAL);
-        long current = System.currentTimeMillis();
-        jobArgs.setEarliestTime("2018-11-28");
-        jobArgs.setLatestTime("2018-11-28");
-        jobArgs.setTimeFormat("yyyy-MM-dd");
+        jobArgs.setEarliestTime("2018-11-30T00:00:00.000+09:00");
+        jobArgs.setLatestTime("2018-11-30T10:00:00.000+09:00");
+        */
+        Args jobArgs = new Args();
+        jobArgs.put("exec_mode", "normal");
+        jobArgs.put("search_mode", "normal");
+        jobArgs.put("earliest_time", /*"2018-11-30T00:00:00.000+09:00"*/1543503600);
+        jobArgs.put("latest_time", /*"2018-11-30T10:00:00.000+09:00"*/1543539600);
+        //18/11/29 11:00:00.000 ~ 18/11/30 11:19:58.000
 
         JobResultsArgs resultsArgs = new JobResultsArgs();
         resultsArgs.setOutputMode(JobResultsArgs.OutputMode.JSON);
 
 		SplunkJobCommand jobCommand = SplunkJobCommand.create(query, jobArgs, resultsArgs, SplunkJobCommand.JOB_RESULT_TYPE.results);
 
-	    List<?> result = seService.getLogByNormalSearch(jobCommand);
-        LOG.debug("{}", result.size());
+	    List<?> result = sService.getLogByNormalSearch(jobCommand);
+        LOG.debug("RESULT SIZE = {}", result.size());
 
-        assertNotNull(result);
+        //assertNotNull(result);
     }
 
 	@Test

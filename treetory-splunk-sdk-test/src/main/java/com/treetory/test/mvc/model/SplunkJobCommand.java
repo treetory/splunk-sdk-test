@@ -11,14 +11,15 @@ public class SplunkJobCommand {
     }
 
     private String query;
-    private JobArgs jobArgs;
+    //private JobArgs jobArgs;
+    private Args jobArgs;
     private JOB_RESULT_TYPE type;
     private Args outputArgs;
 
     public String getQuery() {
         return this.query;
     }
-    public JobArgs getJobArgs() {
+    public Args getJobArgs() {
         return this.jobArgs;
     }
     public Args getOutputArgs() {
@@ -28,7 +29,7 @@ public class SplunkJobCommand {
         return this.type;
     }
 
-    public static SplunkJobCommand create(String query, JobArgs jobArgs, Args outputArgs, JOB_RESULT_TYPE type) {
+    public static SplunkJobCommand create(String query, Args jobArgs, Args outputArgs, JOB_RESULT_TYPE type) {
         SplunkJobCommand job = new SplunkJobCommand();
         job.query = String.format("search %s", query);
         job.jobArgs = jobArgs;

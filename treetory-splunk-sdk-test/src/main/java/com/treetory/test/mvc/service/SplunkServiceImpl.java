@@ -123,11 +123,11 @@ public class SplunkServiceImpl implements SplunkService {
      * @return
      * @throws InterruptedException
      */
-    private Job createJob(com.splunk.Service splunkService, String query, JobArgs jobArgs) throws InterruptedException {
+    private Job createJob(com.splunk.Service splunkService, String query, Args jobArgs) throws InterruptedException {
 
         JobCollection jobs = splunkService.getJobs();
 
-        Job job = jobArgs == null ? jobs.create(query) : jobs.create(query, jobArgs);
+        Job job = (jobArgs == null ? jobs.create(query) : jobs.create(query, jobArgs));
 
         // Wait until results are available.
         boolean didPrintAStatusLine = false;
@@ -174,9 +174,15 @@ public class SplunkServiceImpl implements SplunkService {
 
         try {
 
+            LOG.debug("{}", client.splunkService);
+            LOG.debug("{}", commandJob.getQuery());
+            LOG.debug("{}", commandJob.getJobArgs().toString());
+
             Job _job = this.createJob(client.splunkService, commandJob.getQuery(), commandJob.getJobArgs());
 
-            LOG.debug(" ==> RESULT COUNT : {}", _job.getResultCount());
+            LOG.debug(" ==> EARLIEST TIME : {}", _job.getEarliestTime());
+            LOG.debug(" ==> LATEST TIME : {}", _job.getLatestTime());
+            LOG.debug(" ==> CURSOR TIME : {}", _job.getCursorTime());
 
             result = this.makeResult(_job, commandJob);
 
