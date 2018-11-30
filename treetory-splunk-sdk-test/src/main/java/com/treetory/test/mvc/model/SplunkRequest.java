@@ -2,6 +2,7 @@ package com.treetory.test.mvc.model;
 
 import java.io.Serializable;
 
+@Deprecated
 public class SplunkRequest implements Serializable {
 
 	/**

@@ -22,6 +22,7 @@ import com.treetory.test.config.TestApplicationConfiguration;
 import com.treetory.test.mvc.model.SplunkRequest;
 import com.treetory.test.mvc.service.SplunkService;
 
+import java.util.Calendar;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -93,10 +94,10 @@ public class SplunkServiceTests {
         jobArgs.setExecutionMode(JobArgs.ExecutionMode.NORMAL);
         jobArgs.setSearchMode(JobArgs.SearchMode.NORMAL);
 
-        JobResultsArgs resultsArgs = new JobResultsArgs();
-        resultsArgs.setOutputMode(JobResultsArgs.OutputMode.JSON);
-
         for (String query : queries) {
+
+            JobResultsArgs resultsArgs = new JobResultsArgs();
+            resultsArgs.setOutputMode(JobResultsArgs.OutputMode.JSON);
 
             SplunkJobCommand command = SplunkJobCommand.create(query, jobArgs, resultsArgs, SplunkJobCommand.JOB_RESULT_TYPE.results);
             List<?> result = sService.getLogByNormalSearch(command);
@@ -112,8 +113,23 @@ public class SplunkServiceTests {
 	@Test
 	public void testNormalSearch() throws Exception {
 
-	    List<?> result = seService.getLogByNormalSearch(new SplunkRequest(9));
-        LOG.debug("{}", result);
+		String query = "index=\"moca_result\" rule=* | table \"create_ts\", \"s_ip\", \"d_ip\", \"message\" | appendpipe [ stats count | eval \"create_ts\"=\"-\", s_ip=\"-\", \"d_ip\"=\"-\", \"message\"=\"-\" | where count=0 | table \"create_ts\", \"s_ip\", \"d_ip\", \"message\" ]";
+
+        JobArgs jobArgs = new JobArgs();
+        jobArgs.setExecutionMode(JobArgs.ExecutionMode.ONESHOT);
+        jobArgs.setSearchMode(JobArgs.SearchMode.NORMAL);
+        long current = System.currentTimeMillis();
+        jobArgs.setEarliestTime("2018-11-28");
+        jobArgs.setLatestTime("2018-11-28");
+        jobArgs.setTimeFormat("yyyy-MM-dd");
+
+        JobResultsArgs resultsArgs = new JobResultsArgs();
+        resultsArgs.setOutputMode(JobResultsArgs.OutputMode.JSON);
+
+		SplunkJobCommand jobCommand = SplunkJobCommand.create(query, jobArgs, resultsArgs, SplunkJobCommand.JOB_RESULT_TYPE.results);
+
+	    List<?> result = seService.getLogByNormalSearch(jobCommand);
+        LOG.debug("{}", result.size());
 
         assertNotNull(result);
     }

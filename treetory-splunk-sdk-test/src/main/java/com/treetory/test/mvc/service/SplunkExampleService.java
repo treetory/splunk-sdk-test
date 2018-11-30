@@ -8,15 +8,15 @@ import java.util.List;
 
 public interface SplunkExampleService {
 
-    public List<?> getLogByNormalSearch(SplunkRequest model);
+    public List<?> getLogByNormalSearch(SplunkJobCommand jobCommand);
 
-    public Object getLogByBlockingSearch(SplunkRequest model);
+    public Object getLogByBlockingSearch(SplunkJobCommand jobCommand);
 
-    public Object getLogByOneshotSearch(SplunkRequest model);
+    public Object getLogByOneshotSearch(SplunkJobCommand jobCommand);
 
-    public Object getLogByRealtimeSearch(SplunkRequest model);
+    public Object getLogByRealtimeSearch(SplunkJobCommand jobCommand);
 
-    public Object getLogByExportSearch(SplunkRequest model);
+    public Object getLogByExportSearch(SplunkJobCommand jobCommand);
 
     public void writeLogs(String json);
 

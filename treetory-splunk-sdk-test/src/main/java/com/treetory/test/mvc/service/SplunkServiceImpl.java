@@ -1,22 +1,19 @@
 package com.treetory.test.mvc.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.splunk.*;
+import com.treetory.test.common.properties.SplunkProperties;
+import com.treetory.test.common.util.splunk.SplunkClient;
 import com.treetory.test.mvc.model.SplunkJobCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.treetory.test.common.properties.SplunkProperties;
-import com.treetory.test.common.util.splunk.SplunkClient;
-import com.treetory.test.mvc.model.SplunkRequest;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class SplunkServiceImpl implements SplunkService {
@@ -29,9 +26,9 @@ public class SplunkServiceImpl implements SplunkService {
     /**
      *  splunk job 의 수행결과 inputStream 으로부터 결과를 파싱한다.
      *
-     * @param is
-     * @return
-     * @throws IOException
+     * @param   is
+     * @return  List<?>
+     * @throws  IOException
      */
     private List<?> readFromInputStream(InputStream is) throws IOException {
 
@@ -47,8 +44,10 @@ public class SplunkServiceImpl implements SplunkService {
             }
 
         } finally {
-            resultsReaderNormalSearch.close();
-            is.close();
+            if (resultsReaderNormalSearch != null)
+                resultsReaderNormalSearch.close();
+            if (is != null)
+                is.close();
         }
 
         return result;
@@ -68,6 +67,8 @@ public class SplunkServiceImpl implements SplunkService {
         if (!commandJob.getOutputArgs().containsKey("count")) {
             outputArgs.put("count", job.getResultCount());
         }
+
+        LOG.debug("RESULT COUNT : {}", job.getResultCount());
 
         try {
 
@@ -137,19 +138,14 @@ public class SplunkServiceImpl implements SplunkService {
 
         LOG.debug("Is Job ready : {}, done : {}, finalized : {}, saved : {}", job.isReady(), job.isDone(), job.isFinalized(), job.isSaved());
 
-        float progress = 0f;
-        int scanned = 0;
-        int matched = 0;
-        int results = 0;
-
         do {
 
             if (job.isReady()) {
 
-                progress = job.getDoneProgress() * 100.0f;
-                scanned = job.getScanCount();
-                matched = job.getEventCount();
-                results = job.getResultCount();
+                float progress = job.getDoneProgress() * 100.0f;
+                int scanned = job.getScanCount();
+                int matched = job.getEventCount();
+                int results = job.getResultCount();
 
                 didPrintAStatusLine = true;
 

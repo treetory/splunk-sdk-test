@@ -3,7 +3,7 @@ package com.treetory.test.mvc.service;
 import com.splunk.*;
 import com.treetory.test.common.properties.SplunkProperties;
 import com.treetory.test.common.util.splunk.SplunkClient;
-import com.treetory.test.mvc.model.SplunkRequest;
+import com.treetory.test.mvc.model.SplunkJobCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,11 +27,11 @@ public class SplunkExampleServiceImpl implements SplunkExampleService {
     /**
      * splunk-sdk-java 의 example 을 그대로 따라한 것
      *
-     * @param model
-     * @return
+     * @param   jobCommand
+     * @return  List<?>
      */
     @Override
-    public List<?> getLogByNormalSearch(SplunkRequest model) {
+    public List<?> getLogByNormalSearch(SplunkJobCommand jobCommand) {
 
         SplunkClient sc = null;
 
@@ -50,7 +50,7 @@ public class SplunkExampleServiceImpl implements SplunkExampleService {
 
             JobCollection jobs = sc.splunkService.getJobs();
 
-            job = jobs.create(model.getQuery());
+            job = jobs.create(jobCommand.getQuery());
 
             // Wait until results are available.
             boolean didPrintAStatusLine = false;
@@ -100,13 +100,13 @@ public class SplunkExampleServiceImpl implements SplunkExampleService {
             resultsReaderNormalSearch = new ResultsReaderJson(is);
             HashMap<String, String> event;
             while ((event = resultsReaderNormalSearch.getNextEvent()) != null) {
+                /*
                 System.out.println("EVENT:********");
                 for (String key : event.keySet())
                     System.out.println("  " + key + " --> " + event.get(key));
+                    */
                 eventList.add(event);
             }
-
-            is = job.getEvents();
 
             LOG.debug("EVENT COUNT = {} / SCAN COUNT = {} / eventList size = {}", job.getEventCount(), job.getScanCount(), eventList.size());
 
@@ -141,25 +141,25 @@ public class SplunkExampleServiceImpl implements SplunkExampleService {
 
 
     @Override
-    public Object getLogByBlockingSearch(SplunkRequest model) {
+    public Object getLogByBlockingSearch(SplunkJobCommand jobCommand) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Object getLogByOneshotSearch(SplunkRequest model) {
+    public Object getLogByOneshotSearch(SplunkJobCommand jobCommand) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Object getLogByRealtimeSearch(SplunkRequest model) {
+    public Object getLogByRealtimeSearch(SplunkJobCommand jobCommand) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Object getLogByExportSearch(SplunkRequest model) {
+    public Object getLogByExportSearch(SplunkJobCommand jobCommand) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -236,12 +236,6 @@ public class SplunkExampleServiceImpl implements SplunkExampleService {
             }
 
             LOG.debug("{}", eventList);
-
-            is = job.getEvents();
-
-            LOG.debug("EVENT COUNT = {} / SCAN COUNT = {} / eventList size = {}", job.getEventCount(), job.getScanCount(), eventList.size());
-
-            job.cancel();
 
         } catch (Exception e) {
             e.printStackTrace();
